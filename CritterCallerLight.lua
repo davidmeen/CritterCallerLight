@@ -1,8 +1,7 @@
 AddonName = "CritterCallerLight"
 OldAddonName = "CritterCaller"
 
-local Weighting
-local NormalisedWeighting
+local PetList = {}
 
 CritterCallerLight_Enabled = true
 
@@ -17,6 +16,7 @@ local LastSummonTime = 0
 
 _G["BINDING_HEADER_CRITTERCALLERLIGHT"] = "Critter Caller Light"
 
+-- List is very out of date and potentially unneeded.
 local PetItemSpellIds = 
 {
 	17567,	-- Bloodsail Admiral's Hat
@@ -35,56 +35,30 @@ local PetItemSpellIds =
 
 local PetItemSpells = {}
 
-function PetSummon_NormaliseWeightings( weights )
-	local i
-	local total = 0
-	local name, weightName
-	
-	local normalised = {}
-	
-	total = 0
-	
-	for name, weight in pairs( weights ) do
-		total = total + weight
-	end
-	
-	if total <= 0 then
-		total = 1
-	end
-	
-	for name, weight in pairs( weights ) do
-		normalised[ name ] = weight / total
-	end 
-		
-	return normalised
-end
-
 
 function CritterCallerLight_RebuildWeightings()
 	Weighting = {}
 	
-	-- GetNumPets returns unflitered count, GetPetInfoByIndex returns filteres count.
+	-- GetNumPets returns unflitered count, GetPetInfoByIndex returns filtered count.
 	-- Need to clear filters to make them match. Not very user friendly.
 	--C_PetJournal.ClearSearchFilter() 
 	--C_PetJournal.AddAllPetTypesFilter()
 	--C_PetJournal.AddAllPetSourcesFilter()
+	
+	PetList = {}
 	
 	local _, numPets = C_PetJournal.GetNumPets(true)		
 	for i=1,numPets,1 do
 		local petID, _, _, _, _, _, _, _, _, _, companionID = C_PetJournal.GetPetInfoByIndex(i)
 		if petID then
 			local _, _, _, _, rarity = C_PetJournal.GetPetStats(petID)
-			
-			if C_PetJournal.PetIsSummonable(petID) then			
-				local weight = 1.0
-				--weight = weight * CritterCallerLight_PetRarityMul[rarity] / 100.0
-				
-				Weighting[petID] = weight
+			if C_PetJournal.PetIsSummonable(petID) then
+				for count=1,CritterCallerLightOptions.RarityMul[rarity],1 do
+					PetList[#PetList+1] = petID
+				end
 			end
 		end
 	end
-	
-	NormalisedWeighting = PetSummon_NormaliseWeightings( Weighting )
 end
 
 local AlreadyInitialised = false
@@ -103,9 +77,15 @@ end
 function PetSummon_OnAddonLoaded()
 	
 	if CritterCallerLightOptions == nil then
-		CritterCallerLightOptions = {}
-		CritterCallerLightOptions["RarityMul"] = { 1, 1, 1, 1, 1, 5 }
-		CritterCallerLightOptions["ResummonTime"] = 15
+		CritterCallerLightOptions = {}		
+	end
+	
+	if not CritterCallerLightOptions.RarityMul then
+		CritterCallerLightOptions.RarityMul = { 1, 1, 1, 5, 5, 5 }
+	end
+	
+	if not CritterCallerLightOptions.ResummonTime then
+		CritterCallerLightOptions.ResummonTime = 15
 	end
 
 	CritterCallerLight_RebuildWeightings()
@@ -264,55 +244,44 @@ end
 
 function CritterCallerLight_SummonPetAlways()
 	local _, count = C_PetJournal.GetNumPets(true)
-	local roll = random()		
 	
 	AttemptInitialisation()
-
-	weights = NormalisedWeighting
 	
-	if not weights then
-		return
-	end
-	local totalweight = 0
-	for i=1,count,1 do	
-		local petID, _, _, _, _, _, _, speciesName, _, _, companionID  = C_PetJournal.GetPetInfoByIndex(i)	
-		local issummoned = false
-		if C_PetJournal.GetSummonedPetGUID() == petID then
-			issummoned = true
-		end
-		if weights[ petID ] ~= nil then
-			totalweight = totalweight + weights[ petID ]			
-			
-			if totalweight >= roll then		
-				if not issummoned and C_PetJournal.PetIsSummonable(petID) and not isCompanionBanned(companionID) then
-					--local startTime, duration, isEnabled = GetCompanionCooldown("CRITTER", i)
-					-- Avoid the ability not ready yet message; in this 
-					-- case a pet won't be summoned until the next movement.
-					--if isEnabled == 0 or startTime == 0 then
-						C_PetJournal.SummonPetByGUID( petID )
-					--end
-				end				
-				break
-			end
-		end
+	if #PetList == 0 then
+		CritterCallerLight_RebuildWeightings()
 	end
 
-	local hour,minute = GetGameTime()
+	local failCount = 0
+	
+	local petID = PetList[math.random(#PetList)]	
+	local speciesID = C_PetJournal.GetPetInfoByPetID(petID)
+	
+	while isCompanionBanned(speciesID) or not C_PetJournal.PetIsSummonable(petID) or C_PetJournal.GetSummonedPetGUID() == petID do		
+		failCount = failCount + 1
+		if failCount >= 5 then
+			return
+		end
+		
+		petID = PetList[math.random(#PetList)]
+		speciesID = C_PetJournal.GetPetInfoByPetID(petID)
+	end
+	
+	C_PetJournal.SummonPetByGUID(petID)
 
 	LastSummonTime = GetTime()
 end
 
 function IsTimeForNextSummon()
 
-	if not CritterCallerLightOptions["ResummonTime"] then
+	if not CritterCallerLightOptions.ResummonTime then
 		return false
 	end
 	
-	if CritterCallerLightOptions["ResummonTime"] <= 0 then
+	if CritterCallerLightOptions.ResummonTime <= 0 then
 		return false
 	end
 	
-	local TargetTime = LastSummonTime + CritterCallerLightOptions["ResummonTime"] * 60
+	local TargetTime = LastSummonTime + CritterCallerLightOptions.ResummonTime * 60
 	local CurrentTime = GetTime()
 	return CurrentTime > TargetTime
 end

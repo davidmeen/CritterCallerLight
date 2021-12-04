@@ -14,6 +14,9 @@ No setup is required to start using Critter Caller Light. If at any time you
 don't have a pet out, then the next time you walk forward then one of your 
 pets will automatically be summoned.  This will happen unless you are mounted, 
 flying or in combat.
+Rare pets are much more likely to be summoned. Summon rates can not be configured 
+through the UI, although limited configurability is available by editing the saved 
+variables file.
 
 The /ccall command
 ------------------
