@@ -1,0 +1,9 @@
+## Interface: 90105
+## Title : Critter Caller Light
+## Notes: Summons random companion pets
+## Author: Remeen
+## SavedVariablesPerCharacter:   CritterCallerLightOptions
+
+CritterCallerLight.lua
+CritterCallerLight.xml
+

@@ -1,0 +1,19 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" 
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xsi:schemaLocation="http://www.blizzard.com/wow/ui/ 
+ ..\..\FrameXML\UI.xsd">
+  <Frame name="PetSummonFrame">
+    <Scripts>
+      <OnLoad>
+        self:RegisterEvent("ADDON_LOADED");
+        self:RegisterEvent("COMPANION_UPDATE");
+        self:RegisterEvent("COMPANION_LEARNED");
+        self:RegisterEvent("PLAYER_ENTERING_WORLD");
+        self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
+        PetSummon_OnLoad();
+      </OnLoad>
+      <OnEvent function="PetSummon_OnEvent"/>
+    </Scripts>
+  </Frame>
+
+</Ui>
