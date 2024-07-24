@@ -1,8 +1,6 @@
 AddonName = "CritterCallerLight"
 OldAddonName = "CritterCaller"
 
-local PetList = {}
-
 CritterCallerLight_Enabled = true
 
 local SummoningQuestPet = false
@@ -17,7 +15,7 @@ local LastSummonTime = 0
 _G["BINDING_HEADER_CRITTERCALLERLIGHT"] = "Critter Caller Light"
 
 -- List is very out of date and potentially unneeded.
-local PetItemSpellIds = 
+local PetItemSpellIds =
 {
 	17567,	-- Bloodsail Admiral's Hat
 	23012,	-- Orcish Orphan Whistle
@@ -29,7 +27,7 @@ local PetItemSpellIds =
 	51149,	-- Don Carlos' Famous Hat
 	65183,	-- Venomhide Hatchling
 	65352,	-- Oracle Orphan Whistle
-	65353,	-- Wolvar Orphan Whistle	
+	65353,	-- Wolvar Orphan Whistle
 	66175	-- Macabre Marionette
 }
 
@@ -37,34 +35,21 @@ local PetItemSpells = {}
 
 
 function CritterCallerLight_RebuildWeightings()
-	Weighting = {}
-	
 	-- GetNumPets returns unflitered count, GetPetInfoByIndex returns filtered count.
 	-- Need to clear filters to make them match. Not very user friendly.
-	--C_PetJournal.ClearSearchFilter() 
-	--C_PetJournal.AddAllPetTypesFilter()
-	--C_PetJournal.AddAllPetSourcesFilter()
-	
-	PetList = {}
-	
-	local _, numPets = C_PetJournal.GetNumPets(true)		
-	for i=1,numPets,1 do
-		local petID, _, _, _, _, _, _, _, _, _, companionID = C_PetJournal.GetPetInfoByIndex(i)
-		if petID then
-			local _, _, _, _, rarity = C_PetJournal.GetPetStats(petID)
-			if C_PetJournal.PetIsSummonable(petID) then
-				for count=1,CritterCallerLightOptions.RarityMul[rarity],1 do
-					PetList[#PetList+1] = petID
-				end
-			end
-		end
+	C_PetJournal.SetAllPetSourcesChecked(true)
+	C_PetJournal.SetAllPetSourcesChecked(true)
+	C_PetJournal.SetDefaultFilters()
+	for i = 1,C_PetJournal.GetNumPetSources() do
+		C_PetJournal.SetPetSourceChecked(i, true)
 	end
+	C_PetJournal.ClearSearchFilter()
 end
 
 local AlreadyInitialised = false
 
 local function AttemptInitialisation()
-	if not AlreadyInitialised then 
+	if not AlreadyInitialised then
 		local _, numPets = C_PetJournal.GetNumPets(true)
 		if numPets > 0 then
 			AlreadyInitialised = true
@@ -75,21 +60,17 @@ end
 
 
 function PetSummon_OnAddonLoaded()
-	
+
 	if CritterCallerLightOptions == nil then
-		CritterCallerLightOptions = {}		
+		CritterCallerLightOptions = {}
 	end
-	
-	if not CritterCallerLightOptions.RarityMul then
-		CritterCallerLightOptions.RarityMul = { 1, 1, 1, 5, 5, 5 }
-	end
-	
+
 	if not CritterCallerLightOptions.ResummonTime then
 		CritterCallerLightOptions.ResummonTime = 15
 	end
 
 	CritterCallerLight_RebuildWeightings()
-	
+
 	for index,spellid in ipairs(PetItemSpellIds) do
 		GetItemInfo( spellid )
 		local spellname = GetSpellInfo( spellid )
@@ -97,14 +78,14 @@ function PetSummon_OnAddonLoaded()
 			PetItemSpells[ spellname ] = 1
 		end
 	end
-	
+
 	LastSummonTime = GetTime()
-		
+
 	CheckForCompanion()
-		
+
 	hooksecurefunc( "MoveForwardStart", SummonPet )
 	hooksecurefunc( "ToggleAutoRun", SummonPet )
-	-- This only seems to hook movement by clicking the middle button, not by 
+	-- This only seems to hook movement by clicking the middle button, not by
 	-- holding left and right.
 	hooksecurefunc( "MoveAndSteerStart", SummonPet )
 	-- To hook movement by both buttons, hook them individually
@@ -112,7 +93,7 @@ function PetSummon_OnAddonLoaded()
 	hooksecurefunc("CameraOrSelectOrMoveStop",CritterCallerLight_LeftButtonUp)
 	hooksecurefunc("TurnOrActionStart",CritterCallerLight_RightButtonDown)
 	hooksecurefunc("TurnOrActionStop",CritterCallerLight_RightButtonUp)
-	
+
 end
 
 local LeftDown = false
@@ -143,12 +124,12 @@ end
 function CheckForCompanion()
 
 	local petID = C_PetJournal.GetSummonedPetGUID()
-	if petID then 
+	if petID then
 		HasSummoned = true
 		SummonedPetIndex = petID
-	else 
-		HasSummoned = false 
-	end	
+	else
+		HasSummoned = false
+	end
 
 	if DebugOn then
 		PetSummonPrintDebug()
@@ -158,7 +139,7 @@ end
 
 local PrintedIntroText = false
 
-function PetSummon_UpdateCompanion( companionType )			
+function PetSummon_UpdateCompanion( companionType )
 	if companionType == "CRITTER" then
 		if SummoningQuestPet then
 			SummoningQuestPet = false
@@ -167,12 +148,12 @@ function PetSummon_UpdateCompanion( companionType )
 			QuestPetSummoned = false
 		end
 		CheckForCompanion()
-		
+
 	end
-	
+
 	if not PrintedIntroText then
-		PrintedIntroText = true		
-		
+		PrintedIntroText = true
+
 		-- Leaving this block because it might be useful
 	end
 end
@@ -185,9 +166,9 @@ function PetSummon_OnEvent(self, event, ...)
 		elseif string.upper(loadedAddon) == string.upper(OldAddonName) then
 			print("WARNING: Cannot have both Critter Caller and Critter Caller Light installed at the same time");
 		end
-	elseif event == "COMPANION_UPDATE" then		
+	elseif event == "COMPANION_UPDATE" then
 		PetSummon_UpdateCompanion( ... )
-	elseif event == "COMPANION_LEARNED" then		
+	elseif event == "COMPANION_LEARNED" then
 		CritterCallerLight_RebuildWeightings()
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		HasSummoned = false
@@ -202,17 +183,17 @@ function PetSummon_OnEvent(self, event, ...)
 			end
 		end
 	end
-	
+
 	local _, numPets = C_PetJournal.GetNumPets(true)
 end
 
 
-function PetSummon_OnLoad() 
+function PetSummon_OnLoad()
 	SlashCmdList["CRITTERCALLER"] = CritterCallerSlashCmdFunction
 	SLASH_CRITTERCALLER1 = "/crittercaller"
 	SLASH_CRITTERCALLER2 = "/ccall"
-	
-end 
+
+end
 
 local function isCompanionBanned(companionID)
 	-- Ethereal Soul-Trader can't be summoned in arenas and battle grounds
@@ -220,16 +201,16 @@ local function isCompanionBanned(companionID)
 		if IsActiveBattlefieldArena() then
 			return true
 		end
-		
+
 		for bfid=1,GetMaxBattlefieldID(),1 do
 			if GetBattlefieldStatus(bfid) == "active" then
 				return true
 			end
 		end
 	end
-	
+
 	-- Winter Veil only (December 16th - January 2nd)
-	if companionID == 15698 or companionID == 73741 or companionID == 15705 then		
+	if companionID == 15698 or companionID == 73741 or companionID == 15705 then
 		local day = tonumber(date("%d"))
 		local month = tonumber(date("%m"))
 		if (month == 12 and day >= 16) or (month == 1 and day <= 2) then
@@ -238,34 +219,32 @@ local function isCompanionBanned(companionID)
 			return true
 		end
 	end
-	
+
 	return false
 end
 
 function CritterCallerLight_SummonPetAlways()
 	local _, count = C_PetJournal.GetNumPets(true)
-	
+
 	AttemptInitialisation()
-	
-	if #PetList == 0 then
-		CritterCallerLight_RebuildWeightings()
-	end
 
 	local failCount = 0
-	
-	local petID = PetList[math.random(#PetList)]	
-	local speciesID = C_PetJournal.GetPetInfoByPetID(petID)
-	
-	while isCompanionBanned(speciesID) or not C_PetJournal.PetIsSummonable(petID) or C_PetJournal.GetSummonedPetGUID() == petID do		
+
+	local _, numPets = C_PetJournal.GetNumPets(true)
+
+	local petIndex = math.random(numPets)
+	local petID, speciesID, _, _, _, _, _, _, _, _, companionID = C_PetJournal.GetPetInfoByIndex(petIndex)
+
+	while isCompanionBanned(speciesID) or not C_PetJournal.PetIsSummonable(petID) or C_PetJournal.GetSummonedPetGUID() == petID do
 		failCount = failCount + 1
 		if failCount >= 5 then
 			return
 		end
-		
-		petID = PetList[math.random(#PetList)]
-		speciesID = C_PetJournal.GetPetInfoByPetID(petID)
+
+		local petIndex = math.random(numPets)
+		local petID, speciesID, _, _, _, _, _, _, _, _, companionID = C_PetJournal.GetPetInfoByIndex(petIndex)
 	end
-	
+
 	C_PetJournal.SummonPetByGUID(petID)
 
 	LastSummonTime = GetTime()
@@ -276,11 +255,11 @@ function IsTimeForNextSummon()
 	if not CritterCallerLightOptions.ResummonTime then
 		return false
 	end
-	
+
 	if CritterCallerLightOptions.ResummonTime <= 0 then
 		return false
 	end
-	
+
 	local TargetTime = LastSummonTime + CritterCallerLightOptions.ResummonTime * 60
 	local CurrentTime = GetTime()
 	return CurrentTime > TargetTime
@@ -291,36 +270,36 @@ function ShouldSummon()
 	if HasSummoned and not IsTimeForNextSummon() then
 		return false
 	end
-	
+
 	if not CritterCallerLight_Enabled then
 		return false
 	end
-		
+
 	if IsMounted() then
 		return false
-	end 
-		
+	end
+
 	if UnitAffectingCombat("player") then
 		return false
 	end
-	
+
 	if QuestPetSummoned then
 		return false
 	end
-	
+
 	if UnitIsDeadOrGhost("player") then
 		return false
 	end
-	
+
 	if IsStealthed() then
 		return false
 	end
-	
+
 	return true
 end
 
 function SummonPet()
-	if ShouldSummon() then		
+	if ShouldSummon() then
 		CritterCallerLight_SummonPetAlways()
 	end
 end
@@ -353,7 +332,7 @@ function CritterCallerSlashCmdFunction( cmd )
 	elseif cmd == "debug" then
 		PetSummonPrintDebug()
 	elseif cmd == "debugon" then
-		DebugOn = true		
+		DebugOn = true
 	elseif cmd == "debugoff" then
 		DebugOn = false
 	else

@@ -1,8 +1,8 @@
 <Bindings>
-  <Binding name="Summon" header="CRITTERCALLERLIGHT" category="ADDONS">
+  <!--<Binding name="Summon" header="CRITTERCALLERLIGHT" category="ADDONS">
     CritterCallerLight_SummonPetAlways()
   </Binding>
   <Binding name="Dismiss" category="ADDONS">
     CritterCallerLight_DismissPet()
-  </Binding>
+  </Binding>-->
 </Bindings>
