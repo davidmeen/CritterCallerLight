@@ -73,7 +73,7 @@ function PetSummon_OnAddonLoaded()
 
 	for index,spellid in ipairs(PetItemSpellIds) do
 		GetItemInfo( spellid )
-		local spellname = GetSpellInfo( spellid )
+		local spellname = C_Spell.GetSpellInfo( spellid ).name
 		if spellname then
 			PetItemSpells[ spellname ] = 1
 		end
