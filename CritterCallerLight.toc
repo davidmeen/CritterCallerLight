@@ -1,4 +1,4 @@
-## Interface: 110002
+## Interface: 110207, 120000, 120001
 ## Title : Critter Caller Light
 ## Notes: Summons random companion pets
 ## Author: Remeen
